@@ -1,0 +1,10 @@
+C:\raylib\Projects\Spell_Labs-main\src\entities\enemy\enemy.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\enemy.obj
+C:\raylib\Projects\Spell_Labs-main\src\entities\entity.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\entity.obj
+C:\raylib\Projects\Spell_Labs-main\src\entities\entityManager.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\entityManager.obj
+C:\raylib\Projects\Spell_Labs-main\src\entities\player\player.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\player.obj
+C:\raylib\Projects\Spell_Labs-main\src\main.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\main.obj
+C:\raylib\Projects\Spell_Labs-main\src\renderer\renderer.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\renderer.obj
+C:\raylib\Projects\Spell_Labs-main\src\renderer\renderManager.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\renderManager.obj
+C:\raylib\Projects\Spell_Labs-main\src\resourcemanager\resourceManager.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\resourceManager.obj
+C:\raylib\Projects\Spell_Labs-main\src\scenemanager\sceneManager.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\sceneManager.obj
+C:\raylib\Projects\Spell_Labs-main\src\shared\shared.cpp;C:\raylib\Projects\Spell_Labs-main\Spell_Labs\x64\Debug\shared.obj

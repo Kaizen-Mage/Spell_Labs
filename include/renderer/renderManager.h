@@ -1,6 +1,6 @@
 #pragma once
-#include "engine/engineContext.h"
-#include "renderer/renderer.h"
+#include "../engine/engineContext.h"
+#include "../renderer/renderer.h"
 #include <iostream>
 class RenderManager{
 protected:

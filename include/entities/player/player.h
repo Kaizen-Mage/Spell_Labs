@@ -1,6 +1,6 @@
 #pragma once
 #include "raylib.h"
-#include "entities/entity.h"
+#include "../entities/entity.h"
 class Player:public Entity{
 public:
     Player();

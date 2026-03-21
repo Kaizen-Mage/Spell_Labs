@@ -1,4 +1,4 @@
-#include "resourceManager/resourceManager.h"
+#include "../resourceManager/resourceManager.h"
 void ResourceManager::LoadTexture(const std::string& key, const std::string& filepath) {
         auto it = textures.find(key);
         if (it != textures.end()); // already loaded
@@ -9,7 +9,12 @@ void ResourceManager::LoadTexture(const std::string& key, const std::string& fil
 
 Texture* ResourceManager::GetTexture(const std::string& key) {
     auto it = textures.find(key);
-    if (it == textures.end()) return nullptr;
+    if (it == textures.end()) {
+        
+        TraceLog(LOG_WARNING,TextFormat("Failed to find texure with key: %s",key.c_str()));
+        return nullptr;
+    }
+    TraceLog(LOG_INFO, TextFormat("Loaded Texture with key: %s",key.c_str()));
     return &it->second;
 }
 

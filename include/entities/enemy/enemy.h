@@ -1,7 +1,7 @@
 #pragma once
 #include "raylib.h"
 #include "raymath.h"
-#include "entities/entity.h"
+#include "../entities/entity.h"
 class Enemy:public Entity{
 public:
     Enemy();

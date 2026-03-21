@@ -1,7 +1,7 @@
 #pragma once
-#include "shared.h"
+#include "../shared.h"
 class Renderer{
 
 public:
-    void Render(Texture tex,Transform2D transform);
+    void Render(Texture tex,Transform2D transform,int flipX,int flipY);
 };

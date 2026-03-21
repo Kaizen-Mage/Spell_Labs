@@ -1,8 +1,8 @@
 #include "raylib.h"
-#include "engine/engineContext.h"
-#include "sceneManager/sceneManager.h"
-int renderWidth=1920/3;
-int renderHeight=1080/3;
+#include "../engine/engineContext.h"
+#include "../sceneManager/sceneManager.h"
+int renderWidth=1920/4;
+int renderHeight=1080/4;
 int screenWidth=1920;
 int screenHeight=1080;
 float moveSpeed=30.0f;

@@ -1,4 +1,4 @@
-#include "entities/player/player.h"
+#include "../entities/player/player.h"
 Player::Player(){}
 void Player::Move(float dt){
     if(IsKeyDown(KEY_A)){

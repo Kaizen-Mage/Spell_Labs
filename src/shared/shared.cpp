@@ -1,2 +1,2 @@
-#include "shared.h"
+#include "../shared.h"
 //SpriteSheet::SpriteSheet():texture(nullptr){}

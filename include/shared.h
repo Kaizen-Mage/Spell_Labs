@@ -7,4 +7,7 @@ struct Transform2D{
 struct SpriteSheet
 {
     Texture* texture;
+    int flipX=1;
+    int flipY=1;
 };
+constexpr inline int MAX_LAYERS = 2;
