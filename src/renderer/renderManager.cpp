@@ -6,7 +6,7 @@ void RenderManager::DrawEntities(){
     {
         for (auto& entity : context->entityManager->entities) {
             if (entity->isDrawable && layer == entity->layer) {
-                renderer.Render(*entity->spriteSheet.texture, entity->transform,entity->spriteSheet.flipX,entity->spriteSheet.flipY);
+                renderer.Render(*entity->spriteSheet.texture, entity->transform,entity->transform.rotation,entity->spriteSheet.flipX,entity->spriteSheet.flipY);
             }
         }
     }

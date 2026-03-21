@@ -3,6 +3,7 @@
 struct Transform2D{
     Vector2 position;
     Vector2 size;
+    float rotation=0.0f;
 };
 struct SpriteSheet
 {

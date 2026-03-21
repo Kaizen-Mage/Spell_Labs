@@ -26,7 +26,7 @@ int main(){
        sceneManager.Update(dt);
         BeginDrawing();
         ClearBackground(BLACK);
-        SetTextureFilter(tex.texture,TEXTURE_FILTER_POINT);
+        //SetTextureFilter(tex.texture,TEXTURE_FILTER_POINT);
         BeginTextureMode(tex);
             ClearBackground(BLACK);
             sceneManager.Draw();

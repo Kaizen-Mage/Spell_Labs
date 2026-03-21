@@ -3,5 +3,5 @@
 class Renderer{
 
 public:
-    void Render(Texture tex,Transform2D transform,int flipX,int flipY);
+    void Render(Texture tex,Transform2D transform,float rotatiopn,int flipX,int flipY);
 };

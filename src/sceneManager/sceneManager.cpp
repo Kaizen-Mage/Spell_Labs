@@ -38,12 +38,11 @@ void SceneManager::Update(float dt){
     player->Move(dt);
     player->SubmitToDraw();
     for (auto& enemy : enemies) {
-        if (enemy->transform.position.x<player->transform.position.x) {
-            enemy->spriteSheet.flipX = -1;
-            TraceLog(LOG_INFO, "Flipping");
-        }
-        else {
-            enemy->spriteSheet.flipX = 1;
+        Vector2 distance = Vector2Subtract(enemy->transform.position,player->transform.position);
+        float len = Vector2Length(distance);
+        if (len > 0.001f) {
+            Vector2 dir = Vector2Scale(distance, (1.0f / len));
+            enemy->transform.rotation = atan2f(dir.y,dir.x)*RAD2DEG;
         }
         enemy->Follow(player->transform.position, dt);
         enemy->SubmitToDraw();
