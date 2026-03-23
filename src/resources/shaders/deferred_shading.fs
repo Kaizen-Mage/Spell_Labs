@@ -8,7 +8,7 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 uniform sampler2D gDepth;
-
+//Lighting variables
 struct Light {
     int enabled;
     int type; // Unused in this demo.
@@ -16,9 +16,7 @@ struct Light {
     vec3 target; // Unused in this demo.
     vec4 color;
 };
-//Vars
 const int NR_LIGHTS = 4;
-const int MAX_COLORS=10;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPosition;
 uniform vec2 resolution;
@@ -26,24 +24,17 @@ const float QUADRATIC = 0.032;
 const float LINEAR = 0.09;
 float threshold=sqrt(3)/4;
 bool isSilhouette=false;
-bool useOutline=false;
-
-
-float depthThreshold = 0.0009; // tweak this
+float ambient_lighting=0.5f;
+// outline variables
+float depthThreshold = 0.005; // tweak this
 vec4 crease_edge=vec4(0.8,0.0,0.0,1.0f);
-vec4 silhouette =vec4(0.0,1.0,1.0,1.0);
-uniform vec3 palette[10] = vec3[](
-    vec3(0.2157,0.1843,0.2275),
-    vec3(0.2745,0.2706,0.3451),
-    vec3(0.3294,0.3686,0.4471),
-    vec3(0.3647,0.4627,0.5020),
-    vec3(0.4157,0.5765,0.5843),
-    vec3(0.4824,0.6784,0.6235),
-    vec3(0.5569,0.6980,0.6039),
-    vec3(0.7019,0.7765,0.7059),
-    vec3(0.7725,0.8235,0.8078),
-    vec3(0.8275,0.8471,0.8509)
-);
+vec4 silhouette =vec4(1.0,1.0,1.0,1.0);
+//Quantizaton variables
+uniform bool useOutline;
+uniform bool colorSpace;
+uniform int  palleteSize;
+uniform sampler2D pallete;
+
 //Functions
 float Vec3Distance(vec3 a,vec3 b){
     float c=pow(a.r-b.r,2)+pow(a.g-b.g,2)+pow(a.b-b.b,2);
@@ -61,7 +52,6 @@ vec3 Vec3Pow(vec3 a,float b){
 }
 vec3 rgb2xyz(vec3 rgb){
     rgb=Vec3Pow(rgb,2.2);
-    return rgb;
     float x= 0.4124564*rgb.r + 0.3575761*rgb.g + 0.1804375*rgb.b;
     float y = 0.2126729*rgb.r + 0.7151522*rgb.g + 0.0721750*rgb.b;
     float z = 0.0193339*rgb.r + 0.1191920*rgb.g + 0.9503041*rgb.b;
@@ -81,15 +71,43 @@ vec3 xyz2lab(vec3 xyz) {
 
     return vec3(L, a, b);
 }
-vec3 ColorMap(vec3 color,vec3 map[MAX_COLORS]){
-    vec3 nearestColor=vec3(0);
-    float nearestDist=sqrt(5);
-    for(int i=0;i<MAX_COLORS;i++){
-        if(Vec3Distance(color,map[i])<nearestDist){
-            nearestDist=Vec3Distance(color,map[i]);
-            nearestColor=map[i];
+vec3 ColorMapTextureXYZ(vec3 color) {
+    color = rgb2xyz(color);
+    color = xyz2lab(color);
+
+    vec3 nearestColor = vec3(0.0);
+    float nearestDist = 50000.0;
+
+    for (int i = 0; i < palleteSize; i++) {
+        float u = float(i) / float(palleteSize - 1); // normalized coordinate
+        vec3 palColor = texture(pallete, vec2(u, 0.5)).rgb; // sample the palette
+        palColor = rgb2xyz(palColor);
+        palColor = xyz2lab(palColor);
+
+        float dist = Vec3Distance(color, palColor);
+        if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestColor = texture(pallete, vec2(u, 0.5)).rgb; // return original RGB
         }
     }
+
+    return nearestColor;
+}
+vec3 ColorMapTextureRGB(vec3 color) {
+
+    vec3 nearestColor = vec3(0.0);
+    float nearestDist = 50000.0;
+
+    for (int i = 0; i < palleteSize; i++) {
+        float u = float(i) / float(palleteSize - 1); // normalized coordinate
+        vec3 palColor = texture(pallete, vec2(u, 0.5)).rgb; // sample the palette
+        float dist = Vec3Distance(color, palColor);
+        if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestColor = texture(pallete, vec2(u, 0.5)).rgb; // return original RGB
+        }
+    }
+
     return nearestColor;
 }
 void main() {
@@ -116,7 +134,7 @@ void main() {
 
    
     //this part will be for lighting calculations
-    vec3 ambient = albedo * vec3(0.1f);
+    vec3 ambient = albedo * ambient_lighting;
     vec3 viewDirection = normalize(viewPosition - fragPosition);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
@@ -135,23 +153,29 @@ void main() {
         specular *= attenuation;
         ambient += diffuse + specular;
     }
+    //Anything here is not affected by lighting
     //I dont want this to be affected by lighting for now
-     if(normal_center.w>0.5){
-        useOutline=true;
-    }
-    if(useOutline && (abs(depth_center - depth_left).r > depthThreshold || abs(depth_center - depth_right).r > depthThreshold ||
+    if(!useOutline && (abs(depth_center - depth_left).r > depthThreshold || abs(depth_center - depth_right).r > depthThreshold ||
     abs(depth_center - depth_up).r > depthThreshold || abs(depth_center - depth_down).r > depthThreshold)) {
-        ambient *= silhouette.rgb;
+        ambient = silhouette.rgb;
         isSilhouette=true;
     }
     if(!isSilhouette&&useOutline&&(Vec3Distance(normal_center.rgb,normal_left)>threshold ||Vec3Distance(normal_center.rgb,normal_right)>threshold)){
         //Check if silhouette
-        ambient*=crease_edge.rgb;
+        ambient=crease_edge.rgb;
     }
     if(!isSilhouette&&useOutline&&(Vec3Distance(normal_center.rgb,normal_up)>threshold ||Vec3Distance(normal_center.rgb,normal_down)>threshold)){
-        ambient*=crease_edge.rgb;
+        ambient=crease_edge.rgb;
     }
-    ambient=ColorMap(ambient,palette);
+
+    //Decide which colorSpace for mapping to use
+    if(colorSpace){
+        ambient=ColorMapTextureXYZ(ambient);
+  
+    }
+    else{
+        ambient=ColorMapTextureRGB(ambient);
+    }
     finalColor = vec4(ambient, 1.0);
 }
 
