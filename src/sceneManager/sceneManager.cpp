@@ -24,6 +24,11 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
     LoadPallete("Midnight Ablaze",7,"src/resources/textures/midnight-ablaze.png");
     LoadPallete("AKC12",12,"src/resources/textures/akc12.png");
     LoadPallete("sotc12",12,"src/resources/textures/sotc12.png");
+    LoadPallete("Itten64",64,"src/resources/textures/itten64.png");
+    LoadPallete("Piratte64",64,"src/resources/textures/pirate.png");
+    LoadPallete("Lovecraft",24,"src/resources/textures/lovecraft.png");
+    LoadPallete("Horror",4,"src/resources/textures/look-of-horror.png");
+    LoadPallete("Maggot24",24,"src/resources/textures/maggot24.png");
     LoadPallete("Enchanted Purple",12,"src/resources/textures/enchanted-purple.png");
 
     std::sort(palleteNames.begin(), palleteNames.end());
@@ -96,7 +101,7 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
 
     rlDisableShader();
 
-    lights[0] = CreateLight(LIGHT_POINT,{ -2, 1, -2 }, Vector3Zero(), YELLOW,
+    lights[0] = CreateLight(LIGHT_POINT,0.0f,{ -2, 1, -2 }, Vector3Zero(), WHITE,
         *context->resourceManager->GetShader("Deferred_Shader"));
 
     rlEnableDepthTest();
@@ -109,13 +114,6 @@ void SceneManager::Update(float dt){
         &cam.position, SHADER_UNIFORM_VEC3);
     UpdateCamera(&cam,CAMERA_ORBITAL);
     if (IsKeyPressed(KEY_Y)) { lights[0].enabled = !lights[0].enabled; }
-
-    if (IsKeyPressed(KEY_ONE))   { mode=0; }
-    if (IsKeyPressed(KEY_TWO))   { mode=1; }
-    if (IsKeyPressed(KEY_THREE)) { mode=2; }
-    if (IsKeyPressed(KEY_FOUR))  { mode=3; }
-    if (IsKeyPressed(KEY_FIVE))  { mode=4; }
-
     for (int i = 0; i < MAX_LIGHTS; i++)
         UpdateLightValues(*context->resourceManager->GetShader("Deferred_Shader"), lights[i]);
 }
@@ -196,7 +194,7 @@ void SceneManager::Draw(){
         rlDisableFramebuffer();
 
         rlViewport(0,0,screenWidth,screenHeight);
-        /*
+        
         BeginMode3D(cam);
             for (int i = 0; i < MAX_LIGHTS; i++)
             {
@@ -206,7 +204,6 @@ void SceneManager::Draw(){
                     DrawSphereWires(lights[i].position, 0.2f, 8, 8, ColorAlpha(lights[i].color, 0.3f));
             }
         EndMode3D();
-        */
         break;
 
     case 1:  
@@ -273,6 +270,16 @@ void SceneManager::Draw(){
     ImGui::SliderFloat("Camera Fovy",&cam.fovy,5.0,10.0);
     ImGui::SliderFloat3("Camera Position",&cam.position.x,5.0,15.0);
     ImGui::End();
+    ImGui::Begin("Light Controls");
+    ImGui::InputFloat3("Light Position",&lights[0].position.x);
+    ImGui::SliderFloat("Light intensity",&lights[0].intensity,0.0f,2.0f);
+    ImGui::End();
+
+    ImGui::Begin("Texture Controls");
+    ImGui::InputInt("Texture Mode ",&mode);
+    ImGui::SliderFloat("Light intensity",&lights[0].intensity,0.0f,2.0f);
+    ImGui::End();
+
     rlImGuiEnd();
 }
 void SceneManager::TakeScreenShot(){

@@ -1,7 +1,7 @@
 #version 330
 
 // Input vertex attributes (from vertex shader)
-in vec2 fragTexCoord;
+in vec2 texCoord;
 in vec4 fragColor;
 
 // Input uniform values
@@ -17,7 +17,7 @@ void main()
 {
     float zNear = 0.01; // camera z near
     float zFar = 10.0;  // camera z far
-    float z = texture(texture0, fragTexCoord).x;
+    float z = texture(texture0, texCoord).x;
 
     // Linearize depth value
     float depth = (2.0*zNear)/(zFar + zNear - z*(zFar - zNear));

@@ -15,6 +15,7 @@ struct Light {
     vec3 position;
     vec3 target; // Unused in this demo.
     vec4 color;
+    float intensity;
 };
 const int NR_LIGHTS = 4;
 uniform Light lights[NR_LIGHTS];
@@ -148,7 +149,7 @@ void main() {
 
         // Attenuation
         float distance = length(lights[i].position - fragPosition);
-        float attenuation = 1.0 / (1.0 + LINEAR * distance + QUADRATIC * distance * distance);
+        float attenuation = lights[i].intensity / (1.0 + LINEAR * distance + QUADRATIC * distance * distance);
         diffuse *= attenuation;
         specular *= attenuation;
         ambient += diffuse + specular;

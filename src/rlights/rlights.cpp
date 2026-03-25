@@ -1,5 +1,5 @@
 #include "rlights.h"
-Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader)
+Light CreateLight(int type,float intensity, Vector3 position, Vector3 target, Color color, Shader shader)
 {
     Light light = { 0 };
 
@@ -17,7 +17,7 @@ Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shade
         light.positionLoc = GetShaderLocation(shader, TextFormat("lights[%i].position", lightsCount));
         light.targetLoc = GetShaderLocation(shader, TextFormat("lights[%i].target", lightsCount));
         light.colorLoc = GetShaderLocation(shader, TextFormat("lights[%i].color", lightsCount));
-
+        light.intensityLoc=GetShaderLocation(shader,TextFormat("lights[%i].intensity",lightsCount));
         UpdateLightValues(shader, light);
         
         lightsCount++;
@@ -46,4 +46,5 @@ void UpdateLightValues(Shader shader, Light light)
     float color[4] = { (float)light.color.r/(float)255, (float)light.color.g/(float)255, 
                        (float)light.color.b/(float)255, (float)light.color.a/(float)255 };
     SetShaderValue(shader, light.colorLoc, color, SHADER_UNIFORM_VEC4);
+    SetShaderValue(shader,light.intensityLoc,&light.intensity,SHADER_UNIFORM_FLOAT);
 }

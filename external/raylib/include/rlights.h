@@ -9,6 +9,7 @@ typedef struct {
     Vector3 target;
     Color color;
     float attenuation;
+    float intensity;
     
     // Shader locations
     int enabledLoc;
@@ -17,6 +18,7 @@ typedef struct {
     int targetLoc;
     int colorLoc;
     int attenuationLoc;
+    float intensityLoc;
 } Light;
 
 // Light type
@@ -27,6 +29,6 @@ typedef enum {
 static int lightsCount = 0;    
 
 
-Light CreateLight(int type, Vector3 position, Vector3 target, Color color, Shader shader);
+Light CreateLight(int type,float intensity, Vector3 position, Vector3 target, Color color, Shader shader);
 
 void UpdateLightValues(Shader shader, Light light);
