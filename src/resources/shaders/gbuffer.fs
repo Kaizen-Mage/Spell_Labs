@@ -8,8 +8,8 @@ layout (location = 3) out vec4 gDepth;
 in vec3 fragPosition;
 in vec2 fragTexCoord;
 in vec3 fragNormal;
-uniform float      outline;
-uniform sampler2D diffuseTexture;
+uniform float outline;
+uniform sampler2D colDiffuse;
 uniform sampler2D specularTexture;
 uniform sampler2D depthTexture;
 void main() {
@@ -24,7 +24,7 @@ void main() {
         gNormal.w=0.0f;
     }
     // and the diffuse per-fragment color
-    gAlbedoSpec.rgb = texture(diffuseTexture, fragTexCoord).rgb;
+    gAlbedoSpec.rgb = texture(colDiffuse, fragTexCoord).rgb;
     // store specular intensity in gAlbedoSpec's alpha component
     gAlbedoSpec.a = texture(specularTexture, fragTexCoord).r;
     gDepth.rgb=texture(depthTexture,fragTexCoord).rgb;

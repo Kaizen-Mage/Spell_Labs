@@ -20,7 +20,7 @@ int main() {
         EndDrawing();
        
     }
-    sceneManager.TakeScreenShot();
+    context.resourceManager->UnloadAll();
     rlImGuiShutdown();
     CloseWindow();
 }

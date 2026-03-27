@@ -25,14 +25,16 @@ const float QUADRATIC = 0.032;
 const float LINEAR = 0.09;
 float threshold=sqrt(3)/4;
 bool isSilhouette=false;
-float ambient_lighting=0.5f;
+float ambient_lighting=0.2f;
 // outline variables
-float depthThreshold = 0.005; // tweak this
+float depthThreshold = 0.0025; // tweak this
 vec4 crease_edge=vec4(0.8,0.0,0.0,1.0f);
 vec4 silhouette =vec4(1.0,1.0,1.0,1.0);
 //Quantizaton variables
-uniform bool useOutline;
-uniform bool colorSpace;
+uniform int useOutline;
+uniform int colorSpace;
+uniform int colorMap;
+uniform int showEdges;
 uniform int  palleteSize;
 uniform sampler2D pallete;
 
@@ -140,7 +142,7 @@ void main() {
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
         if(lights[i].enabled == 0) continue;
-        vec3 lightDirection = lights[i].position - fragPosition;
+        vec3 lightDirection = normalize(lights[i].position - fragPosition);
         vec3 diffuse = max(dot(normal, lightDirection), 0.0) * albedo * lights[i].color.xyz;
 
         vec3 halfwayDirection = normalize(lightDirection + viewDirection);
@@ -156,27 +158,32 @@ void main() {
     }
     //Anything here is not affected by lighting
     //I dont want this to be affected by lighting for now
-    if(!useOutline && (abs(depth_center - depth_left).r > depthThreshold || abs(depth_center - depth_right).r > depthThreshold ||
+    if(useOutline==1&& (abs(depth_center - depth_left).r > depthThreshold || abs(depth_center - depth_right).r > depthThreshold ||
     abs(depth_center - depth_up).r > depthThreshold || abs(depth_center - depth_down).r > depthThreshold)) {
         ambient = silhouette.rgb;
         isSilhouette=true;
     }
-    if(!isSilhouette&&useOutline&&(Vec3Distance(normal_center.rgb,normal_left)>threshold ||Vec3Distance(normal_center.rgb,normal_right)>threshold)){
+    if(!isSilhouette&&showEdges==1&&(Vec3Distance(normal_center.rgb,normal_left)>threshold ||Vec3Distance(normal_center.rgb,normal_right)>threshold)){
         //Check if silhouette
         ambient=crease_edge.rgb;
     }
-    if(!isSilhouette&&useOutline&&(Vec3Distance(normal_center.rgb,normal_up)>threshold ||Vec3Distance(normal_center.rgb,normal_down)>threshold)){
+    if(!isSilhouette&&showEdges==1&&(Vec3Distance(normal_center.rgb,normal_up)>threshold ||Vec3Distance(normal_center.rgb,normal_down)>threshold)){
         ambient=crease_edge.rgb;
     }
 
     //Decide which colorSpace for mapping to use
-    if(colorSpace){
+    if(colorMap==1){
+        if(colorSpace==1){
         ambient=ColorMapTextureXYZ(ambient);
-  
+        }
+        else{
+            ambient=ColorMapTextureRGB(ambient);
+        }
     }
     else{
-        ambient=ColorMapTextureRGB(ambient);
+
     }
+    
     finalColor = vec4(ambient, 1.0);
 }
 

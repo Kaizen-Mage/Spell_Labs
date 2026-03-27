@@ -19,7 +19,9 @@ public:
     int mode=0;
     int curPallete=0;
     bool useOutline=true;
-    bool colorSpace=true;
+    bool colorSpace=false;
+    bool showEdges =false;
+    bool colorMap =false;
     int texUnitPosition = 0;
     int texUnitNormal = 1;
     int texUnitAlbedoSpec = 2;
@@ -28,6 +30,7 @@ public:
     Camera3D cam;
     Model cube;
     Model gun;
+    Model man;
     GBuffer gBuffer;
     Light lights[MAX_LIGHTS] = { 0 };
     SceneManager(EngineContext* ctx);

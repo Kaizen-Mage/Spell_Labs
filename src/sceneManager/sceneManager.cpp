@@ -43,12 +43,15 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
 
     cube = LoadModelFromMesh(GenMeshCube(1.0f,1.0f,1.0f));
     gun  = LoadModel("src/resources/models/isometric_cafe.glb");
-
+    man  = LoadModel("src/resources/models/Man.glb");
     cube.materials[0].shader = *context->resourceManager->GetShader("GbufferShader");
     for (int i = 0; i < gun.materialCount; i++) {
         gun.materials[i].shader = *context->resourceManager->GetShader("GbufferShader");
     }
-
+    for(int i =0 ;i<man.materialCount; i++){
+        man.materials[i].shader= *context->resourceManager->GetShader("GbufferShader");
+        std::cout<<man.materials[i].maps[MATERIAL_MAP_ALBEDO].texture.id<<std::endl;
+    }
     gBuffer.frameBufferId = rlLoadFramebuffer();
     rlEnableFramebuffer(gBuffer.frameBufferId);
 
@@ -121,24 +124,25 @@ void SceneManager::Update(float dt){
 void SceneManager::Draw(){
     rlEnableFramebuffer(gBuffer.frameBufferId);
     rlViewport(0,0,downWidth,downHeight);
-    rlClearColor(255, 255, 255, 255);
+    rlClearColor(0,0,0,0);
     rlClearScreenBuffers();
     rlDisableColorBlend();
 
     BeginMode3D(cam);
         float Outline=1.0f;
-        /*SetShaderValue(*context->resourceManager->GetShader("GbufferShader"),
+        SetShaderValue(*context->resourceManager->GetShader("GbufferShader"),
             GetShaderLocation(*context->resourceManager->GetShader("GbufferShader"),"outline"),
             &Outline,SHADER_UNIFORM_FLOAT);
 
         DrawModel(cube,Vector3Zero(),0.25,WHITE);
         DrawModelEx(cube,{0.0,-0.25f,0.0f},{0.0f,0.0f,0.0f},0.0f,{5.0f,0.20f,5.0f},WHITE);
-        */
+        
         Outline=1.0f;
         SetShaderValue(*context->resourceManager->GetShader("GbufferShader"),
             GetShaderLocation(*context->resourceManager->GetShader("GbufferShader"),"outline"),
             &Outline,SHADER_UNIFORM_FLOAT);
-        DrawModelEx(gun,{0.5,0.0,-0.5},{0.0,1.0,0.0},90.0f,{0.4,0.4,0.4},WHITE);
+        //DrawModelEx(gun,{0.5,0.0,-0.5},{0.0,1.0,0.0},90.0f,{0.4,0.4,0.4},WHITE);
+        DrawModelEx(man,{0,1,0},{0.0,2.0,0.0},90.0f,{1.0,1.0,1.0},WHITE);
     EndMode3D();
 
     rlEnableColorBlend();
@@ -171,14 +175,20 @@ void SceneManager::Draw(){
             GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "pallete"),
             &texUnitPalette, RL_SHADER_UNIFORM_SAMPLER2D);
 
-
         SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
             GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "useOutline"),
-            &useOutline,SHADER_UNIFORM_FLOAT);
+            &useOutline,SHADER_UNIFORM_INT);
+        SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
+            GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "showEdges"),
+            &showEdges,SHADER_UNIFORM_INT);
+         SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
+            GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "colorMap"),
+            &colorMap,SHADER_UNIFORM_INT);
 
         SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
             GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "colorSpace"),
-            &colorSpace,SHADER_UNIFORM_FLOAT);
+            &colorSpace,SHADER_UNIFORM_INT);
+
          SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
             GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "palleteSize"),
             &palletes[palleteNames[curPallete]].numColors,SHADER_UNIFORM_INT);
@@ -250,6 +260,8 @@ void SceneManager::Draw(){
     rlImGuiBegin();
     ImGui::Begin("Pallette Swap");
     ImGui::Checkbox("Use Outline:",&useOutline);
+    ImGui::Checkbox("Show Edges:",&showEdges);
+    ImGui::Checkbox("Use ColorMap:",&colorMap);
     ImGui::Checkbox("Use XYZ Mapping:",&colorSpace);
     if (ImGui::BeginCombo("Palette", palleteNames[curPallete].c_str())) {
     for (int i = 0; i < palleteNames.size(); i++) {

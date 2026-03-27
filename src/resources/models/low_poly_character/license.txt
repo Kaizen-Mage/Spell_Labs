@@ -1,0 +1,11 @@
+Model Information:
+* title:	Low Poly Character
+* source:	https://sketchfab.com/3d-models/low-poly-character-f035eaae3f544ef18cdf66785ff25734
+* author:	W3DGE (https://sketchfab.com/W3DGEx)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Low Poly Character" (https://sketchfab.com/3d-models/low-poly-character-f035eaae3f544ef18cdf66785ff25734) by W3DGE (https://sketchfab.com/W3DGEx) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
