@@ -11,6 +11,7 @@ int main() {
     context.resourceManager=&resourceManager;
     InitWindow(GetMonitorWidth(0), GetMonitorHeight(0), "3D pixel art");
     SceneManager sceneManager=SceneManager(&context);
+    SetTraceLogLevel(LOG_WARNING);
     //Shader stuff
     //ToggleFullscreen();
     while (!WindowShouldClose()) {

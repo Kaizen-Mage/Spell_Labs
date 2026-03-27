@@ -8,6 +8,9 @@ void SceneManager::LoadPallete(std::string palletteName,int size,std::string loc
     palleteNames.push_back(palletteName.c_str());
 }
 SceneManager::SceneManager(EngineContext* ctx):context(ctx){
+    //Texture Loading
+    context->resourceManager->LoadTexture("Floor","src/resources/textures/Floor_Texture.png");
+    //Shader loading
     context->resourceManager->LoadShader("GbufferShader","src/resources/shaders/gbuffer.vs","src/resources/shaders/gbuffer.fs");
     context->resourceManager->LoadShader("Deferred_Shader","src/resources/shaders/deferred_shading.vs","src/resources/shaders/deferred_shading.fs");
     context->resourceManager->LoadShader("Depth_Shader","src/resources/shaders/depth_render.vs","src/resources/shaders/depth_render.fs");
@@ -45,6 +48,7 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
     gun  = LoadModel("src/resources/models/isometric_cafe.glb");
     man  = LoadModel("src/resources/models/Man.glb");
     cube.materials[0].shader = *context->resourceManager->GetShader("GbufferShader");
+    cube.materials[0].maps[MATERIAL_MAP_ALBEDO].texture=*context->resourceManager->GetTexture("Floor");
     for (int i = 0; i < gun.materialCount; i++) {
         gun.materials[i].shader = *context->resourceManager->GetShader("GbufferShader");
     }
@@ -52,6 +56,7 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
         man.materials[i].shader= *context->resourceManager->GetShader("GbufferShader");
         std::cout<<man.materials[i].maps[MATERIAL_MAP_ALBEDO].texture.id<<std::endl;
     }
+    //This part is for my main gBuffer for lightin
     gBuffer.frameBufferId = rlLoadFramebuffer();
     rlEnableFramebuffer(gBuffer.frameBufferId);
 
@@ -73,13 +78,8 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
         std::cout<<"FrameBuffer Completed Successfully"<<std::endl;
     }
 
-    texUnitPosition = 0;
-    texUnitNormal = 1;
-    texUnitAlbedoSpec = 2;
-    texUnitDepth = 3;
-
     rlEnableShader(context->resourceManager->GetShader("Deferred_Shader")->id);
-
+    //This is used only to pass into shader
     Vector2 renderSize = {(float)downWidth,(float)downHeight};
 
     SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
@@ -104,14 +104,31 @@ SceneManager::SceneManager(EngineContext* ctx):context(ctx){
 
     rlDisableShader();
 
+
+    //This part is used to set Up the light
     lights[0] = CreateLight(LIGHT_POINT,0.0f,{ -2, 1, -2 }, Vector3Zero(), WHITE,
         *context->resourceManager->GetShader("Deferred_Shader"));
-
+    lightCam.position=lights[0].position;
+    lightCam.fovy=cam.fovy;
+    lightCam.target=lights[0].target;
+    lightCam.up={0.0,1.0,0.0};
+    lightCam.projection=CAMERA_ORTHOGRAPHIC;
+    shadowBuffer.frameBufferId=rlLoadFramebuffer();
+    shadowBuffer.depthRenderBufferId=rlLoadTextureDepth(renderSize.x,renderSize.y,false);
+    rlFramebufferAttach(shadowBuffer.frameBufferId,shadowBuffer.depthRenderBufferId,RL_ATTACHMENT_DEPTH,RL_ATTACHMENT_TEXTURE2D,0);
+      if(rlFramebufferComplete(shadowBuffer.frameBufferId)){
+        std::cout<<"FrameBuffer Completed Successfully"<<std::endl;
+    }
+    
+    rlOrtho(-10, 10, -10, 10, 0.1f, 100.0f);
     rlEnableDepthTest();
     rlImGuiSetup(true);
 }
 
 void SceneManager::Update(float dt){
+    lightCam.position=lights[0].position;
+    lightCam.fovy=cam.fovy;
+    lightCam.target=lights[0].target;
     SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
         context->resourceManager->GetShader("Deferred_Shader")->locs[SHADER_LOC_VECTOR_VIEW],
         &cam.position, SHADER_UNIFORM_VEC3);
@@ -127,22 +144,32 @@ void SceneManager::Draw(){
     rlClearColor(0,0,0,0);
     rlClearScreenBuffers();
     rlDisableColorBlend();
-
     BeginMode3D(cam);
-        float Outline=1.0f;
-        SetShaderValue(*context->resourceManager->GetShader("GbufferShader"),
-            GetShaderLocation(*context->resourceManager->GetShader("GbufferShader"),"outline"),
-            &Outline,SHADER_UNIFORM_FLOAT);
-
         DrawModel(cube,Vector3Zero(),0.25,WHITE);
-        DrawModelEx(cube,{0.0,-0.25f,0.0f},{0.0f,0.0f,0.0f},0.0f,{5.0f,0.20f,5.0f},WHITE);
-        
-        Outline=1.0f;
-        SetShaderValue(*context->resourceManager->GetShader("GbufferShader"),
-            GetShaderLocation(*context->resourceManager->GetShader("GbufferShader"),"outline"),
-            &Outline,SHADER_UNIFORM_FLOAT);
-        //DrawModelEx(gun,{0.5,0.0,-0.5},{0.0,1.0,0.0},90.0f,{0.4,0.4,0.4},WHITE);
+        DrawModelEx(cube,{0.0,-0.25f,0.0f},{0.0f,0.0f,0.0f},0.0f,{10.0f,0.20f,10.0f},WHITE);
+       //DrawModelEx(gun,{0.5,0.0,-0.5},{0.0,1.0,0.0},90.0f,{0.4,0.4,0.4},WHITE);
         DrawModelEx(man,{0,1,0},{0.0,2.0,0.0},90.0f,{1.0,1.0,1.0},WHITE);
+    EndMode3D();
+
+    rlEnableColorBlend();
+    rlDisableFramebuffer();
+
+    //Then get the depth for this
+    rlClearScreenBuffers();
+    rlViewport(0,0,screenWidth,screenHeight);
+    rlEnableFramebuffer(shadowBuffer.frameBufferId);
+    rlViewport(0,0,downWidth,downHeight);
+    rlClearColor(0,0,0,0);
+    rlClearScreenBuffers();
+    rlDisableColorBlend();
+    BeginMode3D(lightCam);
+        DrawModel(cube,Vector3Zero(),0.25,WHITE);
+        DrawModelEx(cube,{0.0,-0.25f,0.0f},{0.0f,0.0f,0.0f},0.0f,{10.0f,0.20f,10.0f},WHITE);
+       //DrawModelEx(gun,{0.5,0.0,-0.5},{0.0,1.0,0.0},90.0f,{0.4,0.4,0.4},WHITE);
+        DrawModelEx(man,{0,1,0},{0.0,2.0,0.0},90.0f,{1.0,1.0,1.0},WHITE);
+        lightView=rlGetMatrixModelview();
+        lightProj=rlGetMatrixProjection();
+        lightViewProj=MatrixMultiply(lightView,lightProj);
     EndMode3D();
 
     rlEnableColorBlend();
@@ -150,7 +177,6 @@ void SceneManager::Draw(){
 
     rlClearScreenBuffers();
     rlViewport(0,0,screenWidth,screenHeight);
-
     switch (mode)
     {
     case 0:
@@ -170,12 +196,18 @@ void SceneManager::Draw(){
     
          rlActiveTextureSlot(texUnitPalette);
         rlEnableTexture(palletes[palleteNames[curPallete]].palleteTex->id); 
+        rlActiveTextureSlot(texUnitShadows);
         
+        rlEnableTexture(shadowBuffer.depthRenderBufferId);
+        SetShaderValueMatrix(*context->resourceManager->GetShader("Deferred_Shader"),GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"),"lightVP"),lightViewProj);
         SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
             GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "pallete"),
             &texUnitPalette, RL_SHADER_UNIFORM_SAMPLER2D);
-
         SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
+            GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "shadowMap"),
+            &texUnitShadows, RL_SHADER_UNIFORM_SAMPLER2D);
+        
+            SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
             GetShaderLocation(*context->resourceManager->GetShader("Deferred_Shader"), "useOutline"),
             &useOutline,SHADER_UNIFORM_INT);
         SetShaderValue(*context->resourceManager->GetShader("Deferred_Shader"),
@@ -244,10 +276,10 @@ void SceneManager::Draw(){
 
     case 4:
         BeginShaderMode(*context->resourceManager->GetShader("Depth_Shader"));
-        rlActiveTextureSlot(0);
-        rlEnableTexture(gBuffer.depthRenderBufferId);
+        rlActiveTextureSlot(10);
+        rlEnableTexture(shadowBuffer.depthRenderBufferId);
         DrawTextureRec((Texture2D){
-                .id = gBuffer.depthRenderBufferId,
+                .id = shadowBuffer.depthRenderBufferId,
                 .width = screenWidth,
                 .height = screenHeight,
             }, (Rectangle) { 0, 0, (float)screenWidth, (float)-screenHeight }, Vector2Zero(), RAYWHITE);
@@ -259,10 +291,10 @@ void SceneManager::Draw(){
     }
     rlImGuiBegin();
     ImGui::Begin("Pallette Swap");
-    ImGui::Checkbox("Use Outline:",&useOutline);
-    ImGui::Checkbox("Show Edges:",&showEdges);
-    ImGui::Checkbox("Use ColorMap:",&colorMap);
-    ImGui::Checkbox("Use XYZ Mapping:",&colorSpace);
+    ImGui::SliderInt("Use Outline:",&useOutline,0,1);
+    ImGui::SliderInt("Show Edges:",&showEdges,0,1);
+    ImGui::SliderInt("Use ColorMap:",&colorMap,0,1);
+    ImGui::SliderInt("Use XYZ Mapping:",&colorSpace,0,1);
     if (ImGui::BeginCombo("Palette", palleteNames[curPallete].c_str())) {
     for (int i = 0; i < palleteNames.size(); i++) {
         bool isSelected = (curPallete == i);
@@ -284,6 +316,7 @@ void SceneManager::Draw(){
     ImGui::End();
     ImGui::Begin("Light Controls");
     ImGui::InputFloat3("Light Position",&lights[0].position.x);
+    ImGui::InputFloat3("Light Target",&lights[0].target.x);
     ImGui::SliderFloat("Light intensity",&lights[0].intensity,0.0f,2.0f);
     ImGui::End();
 

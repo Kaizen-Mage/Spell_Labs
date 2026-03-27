@@ -8,6 +8,8 @@ uniform sampler2D gPosition;
 uniform sampler2D gNormal;
 uniform sampler2D gAlbedoSpec;
 uniform sampler2D gDepth;
+uniform sampler2D shadowMap;
+uniform sampler2D pallete;
 //Lighting variables
 struct Light {
     int enabled;
@@ -21,13 +23,14 @@ const int NR_LIGHTS = 4;
 uniform Light lights[NR_LIGHTS];
 uniform vec3 viewPosition;
 uniform vec2 resolution;
+uniform mat4 lightVP; // Light source view-projection matrix
 const float QUADRATIC = 0.032;
 const float LINEAR = 0.09;
 float threshold=sqrt(3)/4;
 bool isSilhouette=false;
-float ambient_lighting=0.2f;
+float ambient_lighting=0.3f;
 // outline variables
-float depthThreshold = 0.0025; // tweak this
+float depthThreshold = 0.03; // tweak this
 vec4 crease_edge=vec4(0.8,0.0,0.0,1.0f);
 vec4 silhouette =vec4(1.0,1.0,1.0,1.0);
 //Quantizaton variables
@@ -36,7 +39,7 @@ uniform int colorSpace;
 uniform int colorMap;
 uniform int showEdges;
 uniform int  palleteSize;
-uniform sampler2D pallete;
+
 
 //Functions
 float Vec3Distance(vec3 a,vec3 b){
@@ -45,10 +48,10 @@ float Vec3Distance(vec3 a,vec3 b){
     return c;
 }
 vec3 Linearize(vec3 a){
-    float zNear = 0.01; // camera z near
-    float zFar = 10.0;  // camera z far
-    float depth = (a.r*(zFar - zNear)+(zFar + zNear))/2.0f;
-    return vec3(depth);   
+    float zNear = 0.1; // camera z near
+    float zFar = 100.0;  // camera z far
+    float linearDepth = (2.0 * zNear * zFar) / (zFar + zNear - a.r * (zFar - zNear));
+    return vec3(linearDepth);   
 }
 vec3 Vec3Pow(vec3 a,float b){
     return vec3(pow(a.r,b),pow(a.g,b),pow(a.b,b));
@@ -119,6 +122,7 @@ void main() {
     vec3 normal = texture(gNormal, texCoord).rgb;
     vec3 albedo = texture(gAlbedoSpec, texCoord).rgb;
     float specular = texture(gAlbedoSpec, texCoord).a;
+    vec3 gShadow=texture(shadowMap,texCoord).rgb;
 
     
     //this will be for outlining
@@ -137,7 +141,7 @@ void main() {
 
    
     //this part will be for lighting calculations
-    vec3 ambient = albedo * ambient_lighting;
+    vec4 ambient = vec4(albedo * ambient_lighting,1.0);
     vec3 viewDirection = normalize(viewPosition - fragPosition);
     for(int i = 0; i < NR_LIGHTS; ++i)
     {
@@ -154,36 +158,63 @@ void main() {
         float attenuation = lights[i].intensity / (1.0 + LINEAR * distance + QUADRATIC * distance * distance);
         diffuse *= attenuation;
         specular *= attenuation;
-        ambient += diffuse + specular;
+        ambient.rgb += diffuse + specular;
+    }
+  
+    vec3 lightDot = vec3(0.0); // lighting accumulator
+    for (int i = 0; i < NR_LIGHTS; ++i) {
+
+        // Normalized light direction
+        vec3 lightDir = normalize(lights[i].position - fragPosition);
+
+        // Transform fragment into light space
+        vec4 fragPosLightSpace = lightVP * vec4(fragPosition, 1.0);
+        fragPosLightSpace.xyz /= fragPosLightSpace.w;           // perspective divide
+        fragPosLightSpace.xyz = (fragPosLightSpace.xyz + 1.0) / 2.0; // [-1,1] -> [0,1]
+
+        float currentDepth = fragPosLightSpace.z;
+
+        // Depth bias to avoid shadow acne
+        float bias = max(0.005 * (1.0 - dot(normal_center.rgb, lightDir)), 0.0005);
+
+        // Simple shadow test
+        float shadow = 0.0;
+        float shadowDepth = texture(shadowMap, fragPosLightSpace.xy).r;
+        if (currentDepth - bias > shadowDepth) {
+            shadow = 0.9;
+        }
+
+        // Darken ambient or light contribution by shadow
+        ambient.rgb *= (1.0 - shadow);
     }
     //Anything here is not affected by lighting
     //I dont want this to be affected by lighting for now
     if(useOutline==1&& (abs(depth_center - depth_left).r > depthThreshold || abs(depth_center - depth_right).r > depthThreshold ||
     abs(depth_center - depth_up).r > depthThreshold || abs(depth_center - depth_down).r > depthThreshold)) {
-        ambient = silhouette.rgb;
+        ambient.rgb = silhouette.rgb;
         isSilhouette=true;
     }
     if(!isSilhouette&&showEdges==1&&(Vec3Distance(normal_center.rgb,normal_left)>threshold ||Vec3Distance(normal_center.rgb,normal_right)>threshold)){
         //Check if silhouette
-        ambient=crease_edge.rgb;
+        ambient.rgb=crease_edge.rgb;
     }
     if(!isSilhouette&&showEdges==1&&(Vec3Distance(normal_center.rgb,normal_up)>threshold ||Vec3Distance(normal_center.rgb,normal_down)>threshold)){
-        ambient=crease_edge.rgb;
+        ambient.rgb=crease_edge.rgb;
     }
 
     //Decide which colorSpace for mapping to use
     if(colorMap==1){
         if(colorSpace==1){
-        ambient=ColorMapTextureXYZ(ambient);
+        ambient.rgb=ColorMapTextureXYZ(ambient.rgb);
         }
         else{
-            ambient=ColorMapTextureRGB(ambient);
+            ambient.rgb=ColorMapTextureRGB(ambient.rgb);
         }
     }
     else{
 
     }
     
-    finalColor = vec4(ambient, 1.0);
+    finalColor =ambient;
 }
 
